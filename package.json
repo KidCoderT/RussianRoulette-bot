@@ -1,0 +1,16 @@
+{
+  "name": "russian-roulette",
+  "version": "1.0.0",
+  "description": "A russian roulette inspired discord bot where the loser gets banned / kicked or put on timeout!",
+  "main": "index.js",
+  "scripts": {
+    "start": "node .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "KidCoderT",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.6.0",
+    "dotenv": "^16.0.3"
+  }
+}
