@@ -1,16 +1,21 @@
 {
   "name": "russian-roulette",
   "version": "1.0.0",
-  "description": "A russian roulette inspired discord bot where the loser gets banned / kicked or put on timeout!",
+  "description": "A russian roulette inspired discord bot with some twists!",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "node .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "nodemon ./src/index.js",
+    "start": "node ./src/index.js"
   },
   "author": "KidCoderT",
   "license": "MIT",
   "dependencies": {
     "discord.js": "^14.6.0",
     "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
   }
 }
