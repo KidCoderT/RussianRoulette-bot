@@ -1,4 +1,7 @@
-import { Client, IntentsBitField, ChannelType, REST, Routes } from 'discord.js';
+import { Client, IntentsBitField, ChannelType, Routes } from 'discord.js';
+import { REST } from '@discordjs/rest';
+import commands from "./commands.js"
+
 import dotenv from 'dotenv';
 dotenv.config()
 
@@ -31,7 +34,7 @@ client.once('ready', () => {
         if (!guild.channels.cache.some(channel => channel.name == "🔫-russian-roulette-😈")) {
             guild.channels.create(
                 {
-                    name: "🔫 russian-roulette 😈",
+                    name: botServerName,
                     reason: 'Bot channel',
                     type: ChannelType.GuildText,
 
@@ -44,6 +47,7 @@ client.once('ready', () => {
     })
 });
 
+// run on interaction
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -53,13 +57,6 @@ client.on('interactionCreate', async interaction => {
 });
 
 async function main() {
-    const commands = [
-        {
-            name: 'test',
-            description: 'testing slash commands'
-        }
-    ];
-
     try {
         console.log('Started refreshing application (/) commands.');
         await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
