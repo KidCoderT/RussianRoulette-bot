@@ -19,19 +19,28 @@ botIntents.add(
     IntentsBitField.Flags.GuildEmojisAndStickers,
 );
 
-const client = new Client({
-    intents: botIntents
-});
+const client = new Client({ intents: botIntents });
 
 const botServerName = "🔫-russian-roulette-😈";
 const rest = new REST({ version: '10' }).setToken(TOKEN);
 
+function getBotServerId(guild) {
+    let result = undefined;
+
+    guild.channels.cache.forEach((channel) => {
+        if (channel.name == botServerName) {
+            console.log("true", channel.id)
+            result = channel.id;
+        }
+    })
+
+    return result;
+}
+
 // runs only once
 client.once('ready', () => {
-    console.log('Bot is Ready!');
-
     client.guilds.cache.forEach((guild) => {
-        if (!guild.channels.cache.some(channel => channel.name == "🔫-russian-roulette-😈")) {
+        if (!guild.channels.cache.some(channel => channel.name == botServerName)) {
             guild.channels.create(
                 {
                     name: botServerName,
@@ -39,26 +48,49 @@ client.once('ready', () => {
                     type: ChannelType.GuildText,
 
                 })
-                .then(console.log("made new text-channel"))
+                .then(console.log)
                 .catch(console.error);
-        } else {
-            console.log("Found existing channel!")
         }
     })
+
+    console.log('Bot is Ready!');
 });
 
 // run on interaction
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
-    if (interaction.commandName === 'test') {
-        await interaction.reply('Pong!');
+    if (interaction.commandName === 'new') {
+        // check if not owner
+        if (interaction.guild.ownerId === interaction.user.id) {
+            await interaction.reply("Sry but u cant play as it will be unfair because u the server owner.\nPlay using a second account.")
+        } else {
+            let botServerId = getBotServerId(interaction.guild);
+            await interaction.reply(`New game made 😈!\nHead over to the <#${botServerId}>`)
+            await interaction.followUp(`<@${interaction.user.id}> invite other members to join!`)
+
+            let punishment = interaction.options.get('punishment').value;
+            let bullets = interaction.options.get('bullets').value;
+
+            console.log(punishment, bullets)
+            // start new game
+            // store the game
+            // send message on Roulette server to everyone
+            // add join button
+
+            // interaction.guild.channels.cache.forEach((channel) => {
+            //     console.log(channel.name)
+            //     if (channel.name == botServerName) {
+            //         console.log("true", channel.id)
+            //         return channel.id.toString();
+            //     }
+            // })
+        }
     }
 });
 
 async function main() {
     try {
-        console.log('Started refreshing application (/) commands.');
         await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
             body: commands,
         });
