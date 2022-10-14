@@ -8,20 +8,23 @@ const newGameCommand = new SlashCommandBuilder()
             .setName('punishment')
             .setDescription('What punishment should be done on the loser?')
             .addChoices(
-                { name: 'Ban', value: 'ban' },
-                { name: 'Kick', value: 'kick' },
-                { name: 'Timeout', value: 'timeout' },
+                { name: 'Ban', value: 'baned' },
+                { name: 'Kick', value: 'kicked' },
+                { name: 'Timeout', value: 'timed out' },
             )
             .setRequired(true)
     )
     .addIntegerOption((option) =>
         option
-            .setName('bullets')
-            .setDescription('Number of bullets in the barrel?')
+            .setName('shots')
+            .setDescription('Number of shots in the barrel?')
             .setMinValue(1)
-            .setMaxValue(4)
+            .setMaxValue(2)
+            .setAutocomplete(true)
             .setRequired(true)
     );
+
+// start
 
 const commands = [newGameCommand];
 
