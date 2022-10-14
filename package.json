@@ -2,12 +2,12 @@
   "name": "russian-roulette",
   "version": "1.0.0",
   "description": "A russian roulette inspired discord bot with some twists!",
-  "main": "src/index.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start:dev": "nodemon ./src/index.js",
-    "start": "node ./src/index.js"
+    "start:dev": "nodemon ./index.js",
+    "start": "node ./index.js"
   },
   "author": "KidCoderT",
   "license": "MIT",

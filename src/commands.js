@@ -1,7 +1,12 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 
+const commandNames = {
+    New: "new",
+    Start: "start",
+}
+
 const newGameCommand = new SlashCommandBuilder()
-    .setName('new')
+    .setName(commandNames.New)
     .setDescription('create a new game')
     .addStringOption((option) =>
         option
@@ -25,7 +30,9 @@ const newGameCommand = new SlashCommandBuilder()
     );
 
 // start
+const startGameCommand = new SlashCommandBuilder()
+    .setName(commandNames.Start)
+    .setDescription('start a new game');
 
-const commands = [newGameCommand];
-
-export default commands.map(command => command.toJSON())
+const commands = [newGameCommand, startGameCommand].map(command => command.toJSON());
+export { commands, commandNames }
