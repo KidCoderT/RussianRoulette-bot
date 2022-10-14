@@ -91,9 +91,9 @@ client.once('ready', () => {
 
 // run on interaction
 client.on('interactionCreate', async interaction => {
-    client.on('interactionCreate', async interaction => {
-        if (!interaction.isChatInputCommand()) return;
+    // if (!interaction.isChatInputCommand()) return
 
+    if (interaction.isCommand()) {
         if (interaction.commandName === commandNames.New) {
             // check if not owner
             if (interaction.guild.ownerId === interaction.user.id) {
@@ -102,7 +102,7 @@ client.on('interactionCreate', async interaction => {
                 let botServerId = checkChannelPresent(interaction.guild)
 
                 await interaction.reply(`New game made 😈!\nHead over to the ${channelMention(botServerId)}>`)
-                await interaction.followUp({ content: `<@${interaction.user.id}> invite other members to join!`, ephemeral: true })
+                await interaction.followUp({ content: `${userMention(interaction.user.id)} invite other members to join!`, ephemeral: true })
 
                 let punishment = interaction.options.get('punishment').value;
                 let shots = interaction.options.get('shots').value;
@@ -112,30 +112,36 @@ client.on('interactionCreate', async interaction => {
                         content: `hello`,
                     }))
 
-                // let newGame = new Manager(interaction.user.id, punishment, shots, interaction.guild, msg)
-                // games.basic[interaction.user.id] = newGame;
+                await msg.pin()
+
+                let newGame = new Manager(interaction.user.id, punishment, shots, interaction.guild, msg)
+                await newGame.updateInvite()
+                games.basic[interaction.user.id.toString()] = newGame;
             }
         }
+    }
 
-        if (interaction.isButton()) {
-            let [id, options] = interaction.customId;
-            let data = games.basic[id];
+    if (interaction.isButton()) {
+        let [id, options] = interaction.customId.split(" ");
+        let data = games.basic[id.toString()];
 
-            // todo: add state management
-            if (data.state === "setup") {
-                if (options === "j") {
-                    // join new person
-                    data.addPlayer(interaction);
-                    data.updateInvite()
-                } else if (options === "c") {
-                    // cancel the game
-                    let canceled = data.cancelGame(interaction);
-                    if (canceled) { games.basic.delete(id) }
+        if (data === undefined) { return }
+
+        if (data.state === "setup") {
+            if (options === "j") {
+                // join new person
+                let canStart = await data.addPlayer(interaction);
+                if (canStart) { await interaction.channel.send({ content: `${userMention(data.owner.toString())} you can now start the game! 😈`, ephemeral: true }) }
+                await data.updateInvite()
+            } else if (options === "c") {
+                // cancel the game
+                let canceled = data.cancelGame(interaction);
+                if (canceled) {
+                    delete games.basic[id]
                 }
             }
-
         }
-    });
+    }
 });
 
 export default async (token, client_id) => {

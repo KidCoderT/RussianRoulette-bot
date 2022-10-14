@@ -11,13 +11,13 @@ class Manager {
         this.creator = creator;
         this.punishment = punishment;
         this.barrel = [0, 0, 0, 0, 0, 0];
-        for (let i = 0; i == bullets; i++) this.barrel[i] = 1
+        for (let i = 1; i <= bullets; i++) { this.barrel[i] = 1 }
 
         this.guild = guild;
 
         this.inviteMsg = msg
         this.inviteMsgData = {
-            msg: ` - min 2 & max 6!\n - loser will be ${punishment}\n - {0} player joined`,
+            msg: ` - min ${1 + bullets} & max 6!\n - loser will be ${punishment}\n - {} player joined`,
             embed: new EmbedBuilder()
                 .setColor(0xbc0002)
                 .setTitle('Basic Russian Roulette'),
@@ -25,13 +25,13 @@ class Manager {
             row: new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
-                        .setCustomId(`${creator} j`)
+                        .setCustomId(`${creator.toString()} j`)
                         .setStyle(ButtonStyle.Success)
                         .setLabel('Join!'),
                 )
                 .addComponents(
                     new ButtonBuilder()
-                        .setCustomId(`${creator} c`)
+                        .setCustomId(`${creator.toString()} c`)
                         .setStyle(ButtonStyle.Danger)
                         .setLabel('Cancel!'),
                 )
@@ -44,14 +44,14 @@ class Manager {
         this.state = "setup";
     }
 
-    updateInvite() {
+    async updateInvite() {
         this.inviteMsgData.embed
-            .setDescription(this.inviteMsgData.msg.format(this.players.length))
+            .setDescription(this.inviteMsgData.msg.replace("{}", this.players.length.toString()))
 
         if (this.players.length == 6) { this.inviteMsgData.row.components[0].setDisabled(true) }
 
-        this.inviteMsg.edit({
-            content: `<@${interaction.user.id}> made a new game!`,
+        await this.inviteMsg.edit({
+            content: `${userMention(this.owner)} made a new game!`,
             embeds: [this.inviteMsgData.embed],
             components: [this.inviteMsgData.row]
         })
@@ -59,32 +59,42 @@ class Manager {
             .catch(console.error);
     }
 
-    addPlayer(interaction) {
-        let content = "you are the owner so to keep the game fair u cannot play!\nSry ☹";
+    async addPlayer(interaction) {
+        let content = "";
         let canAdd = false;
+        let canStart = false;
 
-        if (interaction.user.id != this.guild.ownerId) {
-            if (this.players.length == 6) {
-                content = "The game is full no more players can join!"
-            } else {
-                content = "Added new player " + userMention(interaction.user.id) + " to Game!" //, ephemeral: true })
-                canAdd = true;
-            }
+        if (interaction.user.id == this.guild.ownerId) {
+            content = "you are the owner so to keep the game fair u cannot play!\nSry ☹"
+        } else if (interaction.user.id == this.owner) {
+            content = "You are the creator of the game!\nu cant join ur own game silly!"
+        } else if (this.players.includes(interaction.user.id)) {
+            content = "You are already in the game 👿"
+        } else if (this.players.length == 6) {
+            content = "The game is full no more players can join!"
+        } else {
+            content = "Added new player " + userMention(interaction.user.id) + " to Game!" //, ephemeral: true })
+            canAdd = true;
         }
 
-        if (!canAdd) { interaction.reply({ content: content, ephemeral: true }) }
-        else {
+        if (canAdd) {
             this.messages.push(interaction.reply({ content: content }))
-            this.updateInvite()
+            this.players.push(interaction.user.id)
+            // check if can start game
+            this.canStart = this.players.length >= 1 + this.shotsLeft
+            canStart = this.players.length == 1 + this.shotsLeft
+        } else {
+            interaction.reply({ content: content, ephemeral: true })
         }
 
-        return canAdd
+        return canStart
     }
 
     cancelGame(interaction) {
-        if (interaction.user.id == this.owner.id) {
-            interaction.reply({ content: "deleted the game 😞" })
-            this.messages.forEach(message => { message.delete() })
+        if (interaction.user.id == this.owner) {
+            interaction.reply({ content: `${this.players.map(id => userMention(id)).join(" ")} deleted the game 😞` })
+            this.messages.forEach(message => { try { message.delete() } catch { } })
+            this.inviteMsg.unpin()
             this.inviteMsg.delete()
             return true
         }
