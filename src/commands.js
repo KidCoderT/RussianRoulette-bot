@@ -25,7 +25,6 @@ const newGameCommand = new SlashCommandBuilder()
             .setDescription('Number of shots in the barrel?')
             .setMinValue(1)
             .setMaxValue(2)
-            .setAutocomplete(true)
             .setRequired(true)
     );
 
