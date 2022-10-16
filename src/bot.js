@@ -3,10 +3,6 @@ import {
     IntentsBitField,
     ChannelType,
     Routes,
-    ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle,
-    EmbedBuilder,
     channelMention,
     userMention
 } from 'discord.js';
@@ -34,14 +30,12 @@ const botChannelName = "🔫-russian-roulette-😈";
 let game = {
     basic: undefined,
 };
-let botChannelID = {}; // contains the id of the bot channel
 
 function getBotServerId(guild) {
     let result = undefined;
 
     guild.channels.cache.forEach((channel) => {
         if (channel.name == botChannelName) {
-            botChannelID[guild.id] = channel.id
             result = channel.id;
         }
     })
@@ -50,8 +44,9 @@ function getBotServerId(guild) {
 }
 
 function checkChannelPresent(guild) {
-    if (guild.channels.cache.some(channel => channel.id == botChannelID[guild.id])) {
-        return botChannelID[guild.id];
+    let id = getBotServerId(guild)
+    if (id != undefined) {
+        return id;
     }
 
     let channel = guild.channels.create(
@@ -61,28 +56,41 @@ function checkChannelPresent(guild) {
             type: ChannelType.GuildText,
 
         })
-        .then(console.log)
         .catch(console.error);
 
-    botChannelID[guild.id] = channel.id
     return channel.id
+}
+
+async function runGame(channel) {
+    await game.basic.playTurn(channel, true)
+
+    while (game.basic.state != "game over") {
+        if (!game.basic.playingMove) {
+            await channel.send("moving to the next player");
+            await wait(500)
+            await game.basic.playTurn(channel)
+            await wait(2000)
+        }
+    }
+
+    await channel.send("Game Over");
+    await channel.send("Thx for playing!");
+
+    game.basic = undefined
 }
 
 // runs only once
 client.once('ready', () => {
     client.guilds.cache.forEach((guild) => {
         if (getBotServerId(guild) === undefined) {
-            let channel = guild.channels.create(
+            guild.channels.create(
                 {
                     name: botChannelName,
                     reason: 'Bot channel',
                     type: ChannelType.GuildText,
 
                 })
-                .then(console.log)
                 .catch(console.error);
-
-            botChannelID[guild.id] = channel.id
         }
 
     })
@@ -97,18 +105,21 @@ client.on('interactionCreate', async interaction => {
     if (interaction.isCommand()) {
         if (interaction.commandName === commandNames.New) {
             // check if not owner
-            if (interaction.guild.ownerId === interaction.user.id) {
+            let punishment = interaction.options.get('punishment').value;
+            let shots = interaction.options.get('shots').value;
+
+            if (interaction.guild.ownerId === interaction.member.id) {
                 await interaction.reply({ content: "Sry but u cant play as it will be unfair because u the server owner.\nPlay using a second account.", ephemeral: true })
             } else if (game.basic !== undefined) {
                 await interaction.reply({ content: "A game is already in progress!\nEither join that or wait until its over to start a new game.", ephemeral: true })
+            } else if ((punishment === "kicked" && !interaction.member.kickable) || (punishment === "baned" && !interaction.member.bannable) || (punishment === "timed out" && !interaction.member.moderatable)) {
+                await interaction.reply({ content: "Bot doesn't have enough perms to punish u so u cant play!\n Sry!", ephemeral: true })
             } else {
                 let botServerId = checkChannelPresent(interaction.guild)
 
                 await interaction.reply(`New game made 😈!\nHead over to the ${channelMention(botServerId)}>`)
-                await interaction.followUp({ content: `${userMention(interaction.user.id)} invite other members to join!`, ephemeral: true })
+                await interaction.followUp({ content: `${userMention(interaction.member.id)} invite other members to join!`, ephemeral: true })
 
-                let punishment = interaction.options.get('punishment').value;
-                let shots = interaction.options.get('shots').value;
 
                 let msg = await interaction.guild.channels.fetch(botServerId)
                     .then(channel => channel.send({
@@ -117,7 +128,7 @@ client.on('interactionCreate', async interaction => {
 
                 await msg.pin()
 
-                let newGame = new Manager(interaction.user.id, punishment, shots, interaction.guild, msg)
+                let newGame = new Manager(interaction.member.id, punishment, shots, interaction.guild, msg)
                 await newGame.updateInvite()
                 game.basic = newGame;
             }
@@ -127,16 +138,10 @@ client.on('interactionCreate', async interaction => {
             if (game.basic === undefined) {
                 interaction.reply({ content: "There is no game made to be started! 😂" })
                 return
-            }
-
-            // check if the user is the game owner
-            if (interaction.user.id !== game.basic.owner) {
+            } else if (interaction.member.id !== game.basic.owner) {
                 interaction.reply({ content: "u are not the owner and so cant start the game!\n tell the owner to start the game!!" })
                 return
-            }
-
-            // check if can start the game
-            if (!game.basic.canStart) {
+            } else if (!game.basic.canStart) {
                 interaction.reply({ content: "There are not enough people to start the game!\n ask more people to join!" })
                 return
             }
@@ -145,9 +150,7 @@ client.on('interactionCreate', async interaction => {
             await interaction.reply({ content: "Starting Game!" });
             game.basic.state = "playing"
 
-            while (game.basic.inviteMsgData.row.components.length > 0) {
-                game.basic.inviteMsgData.row.components.pop()
-            }
+            game.basic.inviteMsgData.row = undefined
 
             await game.basic.updateInvite()
 
@@ -158,18 +161,10 @@ client.on('interactionCreate', async interaction => {
             await wait(1000);
             await interaction.channel.send("… Spinning Barrel");
             game.basic.spinBarrel();
+            console.log(game.basic.barrel)
             await wait(500);
 
-            // todo: create run player
-            game.basic.playTurn(interaction.channel, true)
-
-            while (game.basic.state != "game over") {
-                await interaction.channel.send("moving to the next player");
-                game.basic.playTurn(interaction.channel)
-            }
-
-            await interaction.channel.send("Game Over");
-            await interaction.channel.send("Thx for playing!");
+            runGame(interaction.channel)
         }
     }
 
@@ -178,8 +173,6 @@ client.on('interactionCreate', async interaction => {
         let data = game.basic;
 
         if (data === undefined) { return }
-
-        // todo: make sure that the option is in correct interaction
 
         if (options === "j") {
             // join new person
@@ -192,15 +185,23 @@ client.on('interactionCreate', async interaction => {
             if (canceled) {
                 game.basic = undefined
             }
-        } else if (options === "sp") {
-            // todo: make sure the user is the current player
-            await interaction.reply("… Spining Barrel")
-            game.basic.spinBarrel();
-            game.basic.clickedBtn = true;
-        } else if (options === "co") {
-            // todo: make sure the user is the current player
-            await interaction.reply("Just continuing with current gun!")
-            game.basic.clickedBtn = true;
+        }
+
+        if (data.state == "playing") {
+            if (interaction.member.id == data.players[data.turn]) {
+                if (options === "sp") {
+                    await interaction.reply("… Spinning Barrel")
+                    game.basic.spinBarrel();
+                    game.basic.clickedBtn = true;
+                } else if (options === "co") {
+                    await interaction.reply("Just continuing with current gun!")
+                    game.basic.clickedBtn = true;
+                }
+            } else if (data.players.includes(interaction.member.id)) {
+                await interaction.reply({ content: "Its not your turn !", ephemeral: true })
+            } else {
+                await interaction.reply({ content: "Your not in this game !", ephemeral: true })
+            }
         }
     }
 });
