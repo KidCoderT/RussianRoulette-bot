@@ -3,6 +3,7 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 const commandNames = {
     New: "new",
     Start: "start",
+    Info: "info"
 }
 
 const newGameCommand = new SlashCommandBuilder()
@@ -33,5 +34,10 @@ const startGameCommand = new SlashCommandBuilder()
     .setName(commandNames.Start)
     .setDescription('start a new game');
 
-const commands = [newGameCommand, startGameCommand].map(command => command.toJSON());
+// info
+const gameInfoCommand = new SlashCommandBuilder()
+    .setName(commandNames.Info)
+    .setDescription('how to use the bot?');
+
+const commands = [newGameCommand, startGameCommand, gameInfoCommand].map(command => command.toJSON());
 export { commands, commandNames }

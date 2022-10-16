@@ -4,7 +4,8 @@ import {
     ChannelType,
     Routes,
     channelMention,
-    userMention
+    userMention,
+    bold
 } from 'discord.js';
 import { setTimeout as wait } from 'timers/promises';
 
@@ -165,6 +166,24 @@ client.on('interactionCreate', async interaction => {
             await wait(500);
 
             runGame(interaction.channel)
+        }
+
+        if (interaction.commandName === commandNames.Info) {
+            interaction.reply(
+                "Hi, this is the russian roulette bot made with javascript & discord.js\n"
+                + "by the kct(kidcodert) 👨‍💻.\n"
+                + "\n"
+                + "this bot allows u to play russian roulette with ur friends in discord\n"
+                + `to start a new game use the slash command ${bold("/new")} and fill in the info.\n`
+                + "for number of bullets select either 1 or 2 bullets as any more and i dont see the point!\n"
+                + "after that invite your friends to join the game. once they join the game and there are\n"
+                + `enough players and the bot tells u can start then the creator of the game can run ${bold("/start")}\n`
+                + "when he / she does that the game starts and the rest of the rules are explained by the bot.\n"
+                + "\n"
+                + "do note: all who want to play their role must be lower than that of the bot! if not none can play.\n"
+                + "and also sadly the owner of the server cannot play the game unless they have a secondary account!\n"
+                + "thx!"
+            )
         }
     }
 
